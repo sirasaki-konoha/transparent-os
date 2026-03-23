@@ -16,11 +16,14 @@ pub fn build(b: *std.Build) void {
         }),
     });
     kernel.setLinkerScript(b.path("linker.ld"));
+    kernel.entry = .{ .symbol_name = "kernel_main" };
+    kernel.root_module.sanitize_c = .off;
+
     b.installArtifact(kernel);
 
     const make_isoroot = b.addSystemCommand(&.{
         "sh", "-c",
-        "mkdir -p isoroot/boot/grub && cp zig-out/bin/transparent_kernel isoroot/boot/",
+        "mkdir -p isoroot/boot/grub && cp zig-out/bin/transparent_kernel isoroot/boot/ && cp grub.cfg isoroot/boot/grub/",
     });
     make_isoroot.step.dependOn(b.getInstallStep());
 
@@ -32,9 +35,10 @@ pub fn build(b: *std.Build) void {
     const qemu = b.addSystemCommand(&.{
         "qemu-system-x86_64",
         "-cdrom", "transparent-os.iso",
-        "-nographic",
         "-no-reboot",
         "-m", "128M",
+        "-serial", "mon:stdio",
+        "-D", "/tmp/qemu.log"
     });
     qemu.step.dependOn(&make_iso.step);
 

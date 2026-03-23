@@ -1,3 +1,4 @@
 *.iso
 /zig-out
 /.zig-cache
+/isoroot
